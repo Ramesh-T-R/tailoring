@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { ProjectState, MeasurementProfile } from '../../../types/project';
 import { StoreManager } from '../../../store/projectStore';
 import { MeasurementForm } from '../../../components/MeasurementForm';
@@ -22,16 +22,30 @@ interface Props {
 export const ProjectDashboard: React.FC<Props> = ({ initialProject, onExit }) => {
   const [store] = useState(() => new StoreManager(initialProject));
   const [currentProject, setCurrentProject] = useState<ProjectState>(store.getState().project);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleUpdateMeasurements = async (measurements: MeasurementProfile) => {
+  const syncWithServer = useCallback(async (project: ProjectState) => {
+    try {
+      await projectService.update(project.id, project);
+    } catch (error) {
+      console.error('Failed to sync with server:', error);
+    }
+  }, []);
+
+  const handleUpdateMeasurements = (measurements: MeasurementProfile) => {
+    // 1. Immediate local update for UI responsiveness
     store.getState().updateMeasurements(measurements);
     const updated = { ...store.getState().project };
     setCurrentProject(updated);
-    try {
-      await projectService.update(updated.id, updated);
-    } catch (error) {
-      console.error('Failed to sync measurements:', error);
+
+    // 2. Debounced server sync
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
     }
+
+    debounceTimer.current = setTimeout(() => {
+      syncWithServer(updated);
+    }, 500);
   };
 
   const handleFabricChange = async (fabricType: string) => {

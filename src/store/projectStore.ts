@@ -39,6 +39,10 @@ export class StoreManager {
     };
 
     this.state.history.push(nextState);
+    // Prune history to prevent memory bloat
+    if (this.state.history.length > 50) {
+      this.state.history.shift();
+    }
     this.state.project = nextState;
   }
 
@@ -54,6 +58,10 @@ export class StoreManager {
     };
 
     this.state.history.push(nextState);
+    // Prune history to prevent memory bloat
+    if (this.state.history.length > 50) {
+      this.state.history.shift();
+    }
     this.state.project = nextState;
   }
 

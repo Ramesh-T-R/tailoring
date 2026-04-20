@@ -35,4 +35,4 @@
 - **Measurement Types:** CRUD interface for defining custom measurement parameters.
 - **Size Charts:** CRUD interface for defining standardized size tables (S, M, L, etc.) with configurable units (cm/in).
 - **Dress Types:** CRUD interface for defining standardized garment blueprints.
-- **Dress Part Types:** CRUD interface for modular pattern component definitions.
+- **Design category:** CRUD interface for modular pattern component definitions.

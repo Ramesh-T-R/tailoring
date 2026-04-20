@@ -2,7 +2,8 @@
 
 ## Project Documents
 
-- **[PRD.md](../documents/PRD.md)** - Product Requirements Document for Thaiyalagam.
+- **[PRD Index](../documents/PRD/index.md)** - Product Requirements Document for Thaiyalagam.
+- **[Architecture Index](../documents/ARCHITECTURE/index.md)** - Technical blueprints and architectural standards.
 
 ## BMad Configuration (`_config/`)
 

@@ -2,7 +2,7 @@ import React from 'react';
 import { List, ListItem, ListItemText, Collapse } from '@mui/material';
 import { 
   Settings, ExpandLess, ExpandMore, Straighten, GridOn, 
-  Checkroom, Layers, ContentCut, Folder 
+  Checkroom, Layers, ContentCut, Folder, Brush 
 } from '@mui/icons-material';
 import { useSidebarLogic } from './useSidebarLogic';
 import { 
@@ -50,7 +50,7 @@ export const Sidebar: React.FC<Props> = ({ onNavigate }) => {
                 { label: 'Measurement Types', icon: <Straighten fontSize="small" />, view: 'config-measurements' },
                 { label: 'Size Charts', icon: <GridOn fontSize="small" />, view: 'config-sizes' },
                 { label: 'Dress Types', icon: <Checkroom fontSize="small" />, view: 'config-dresses' },
-                { label: 'Dress Part Types', icon: <Layers fontSize="small" />, view: 'config-parts' },
+                { label: 'Design category', icon: <Brush fontSize="small" />, view: 'config-parts' },
               ].map((item) => (
                 <SubNavListItemButton 
                   key={item.label}

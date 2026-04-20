@@ -1,6 +1,6 @@
 import { MeasurementType } from '../types/measurementType';
 
-const API_URL = 'http://localhost:5001/api/measurement-types';
+const API_URL = `${import.meta.env.VITE_API_BASE_URL}/measurement-types`;
 
 export const measurementTypeService = {
   async getAll(): Promise<MeasurementType[]> {

@@ -126,7 +126,7 @@ export const DressTypePage: React.FC = () => {
           )}
           <TextField 
             label="Name" fullWidth margin="dense" 
-            inputProps={{ maxLength: 50 }}
+            slotProps={{ htmlInput: { maxLength: 50 } }}
             value={name} onChange={(e) => setName(e.target.value)} 
             helperText={`${name.length}/50`}
           />
@@ -139,7 +139,7 @@ export const DressTypePage: React.FC = () => {
           </FormControl>
           <TextField 
             label="Description" fullWidth margin="dense" multiline rows={3} 
-            inputProps={{ maxLength: 250 }}
+            slotProps={{ htmlInput: { maxLength: 250 } }}
             value={description} onChange={(e) => setDescription(e.target.value)} 
             helperText={`${description.length}/250`}
           />

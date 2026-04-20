@@ -1,12 +1,12 @@
-# Architecture: Thaiyalagam (Scientific Atelier)
+# Architecture Documentation Index
 
-## Table of Contents
+This directory contains the technical blueprints and architectural standards for the Thaiyalagam platform.
 
-- [Architecture: Thaiyalagam (Scientific Atelier)](#table-of-contents)
-  - [1. High-Level Overview](./1-high-level-overview.md)
-  - [2. Frontend Architecture (Enterprise Standard)](./2-frontend-architecture-enterprise-standard.md)
-    - [Core Directory Structure:](./2-frontend-architecture-enterprise-standard.md#core-directory-structure)
-    - [Key Design Principles:](./2-frontend-architecture-enterprise-standard.md#key-design-principles)
-  - [3. Backend Architecture](./3-backend-architecture.md)
-  - [4. Data Flow](./4-data-flow.md)
-  - [5. Security & Stability](./5-security-stability.md)
+## Core Architecture Documents
+
+- **[1-high-level-overview.md](./1-high-level-overview.md)** - System context, tiers, and primary communication patterns.
+- **[2-frontend-architecture-enterprise-standard.md](./2-frontend-architecture-enterprise-standard.md)** - Feature-based modularity, state management, and geometric logic.
+- **[3-backend-architecture.md](./3-backend-architecture.md)** - REST service stack, Mongoose models, and validation gates.
+- **[4-data-flow.md](./4-data-flow.md)** - Detailed update lifecycle including debouncing and persistence.
+- **[5-security-stability.md](./5-security-stability.md)** - Security posture, known limitations, and stability guardrails.
+- **[6-infrastructure.md](./6-infrastructure.md)** - Environment management, deployment strategy, and monitoring.

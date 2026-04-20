@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import Project from '../models/Project';
+import { ProjectSchema } from '../schemas/projectSchema';
 
 export const getProjects = async (req: Request, res: Response) => {
   try {
@@ -12,25 +13,27 @@ export const getProjects = async (req: Request, res: Response) => {
 
 export const createProject = async (req: Request, res: Response) => {
   try {
-    const newProject = new Project(req.body);
+    const validatedData = ProjectSchema.parse(req.body);
+    const newProject = new Project(validatedData);
     const savedProject = await newProject.save();
     res.status(201).json(savedProject);
   } catch (error) {
-    res.status(400).json({ message: 'Error creating project', error });
+    res.status(400).json({ message: 'Validation or Database Error', error });
   }
 };
 
 export const updateProject = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const validatedData = ProjectSchema.partial().parse(req.body);
     const updatedProject = await Project.findOneAndUpdate(
       { id },
-      { $set: req.body },
+      { $set: validatedData },
       { new: true, upsert: true }
     );
     res.json(updatedProject);
   } catch (error) {
-    res.status(400).json({ message: 'Error updating project', error });
+    res.status(400).json({ message: 'Validation or Database Error', error });
   }
 };
 

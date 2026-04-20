@@ -234,7 +234,7 @@ export const SizeChartPage: React.FC = () => {
           )}
           <TextField
             autoFocus margin="dense" label="Size Chart Name" fullWidth variant="outlined"
-            inputProps={{ maxLength: 50 }}
+            slotProps={{ htmlInput: { maxLength: 50 } }}
             value={chartName} onChange={(e) => setName(e.target.value)} sx={{ mb: 2 }}
           />
           <FormControl fullWidth margin="dense" sx={{ mb: 3 }}>
@@ -288,7 +288,7 @@ export const SizeChartPage: React.FC = () => {
                   <TableCell>
                     <TextField
                       size="small" type="number" 
-                      inputProps={{ step: "0.1", min: 0, max: 250 }}
+                      slotProps={{ htmlInput: { step: "0.1", min: 0, max: 250 } }}
                       value={entry.value} 
                       onChange={(e) => {
                           const val = parseFloat(e.target.value);

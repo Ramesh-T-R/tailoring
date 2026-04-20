@@ -6,6 +6,7 @@ import projectRoutes from './routes/projectRoutes';
 import measurementTypeRoutes from './routes/measurementTypeRoutes';
 import sizeChartRoutes from './routes/sizeChartRoutes';
 import dressTypeRoutes from './routes/dressTypeRoutes';
+import designCategoryRoutes from './routes/designCategoryRoutes';
 
 dotenv.config();
 
@@ -26,14 +27,15 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/measurement-types', measurementTypeRoutes);
 app.use('/api/size-charts', sizeChartRoutes);
 app.use('/api/dress-types', dressTypeRoutes);
+app.use('/api/design-categories', designCategoryRoutes);
 
 // Database Connection
 console.log('Connecting to MongoDB...');
 mongoose.connect(MONGODB_URI)
   .then(() => {
     console.log('✅ Connected to MongoDB');
-    app.listen(PORT, () => {
-      console.log(`🚀 Server is running on port ${PORT}`);
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 Server is running on http://0.0.0.0:${PORT}`);
     });
   })
   .catch((error) => {

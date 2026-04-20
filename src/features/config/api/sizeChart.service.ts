@@ -1,6 +1,6 @@
 import { SizeType, SizeChart } from '../types/sizeChart';
 
-const API_URL = 'http://localhost:5001/api/size-charts';
+const API_URL = `${import.meta.env.VITE_API_BASE_URL}/size-charts`;
 
 export const sizeChartService = {
   async getSizeTypes(): Promise<SizeType[]> {

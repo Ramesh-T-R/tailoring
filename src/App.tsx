@@ -5,6 +5,7 @@ import { ProjectSetup } from './features/tailoring/components/ProjectSetup';
 import { MeasurementTypePage } from './features/config/components/MeasurementTypePage';
 import { SizeChartPage } from './features/config/components/SizeChartPage';
 import { DressTypePage } from './features/config/components/DressTypePage';
+import { DesignCategoryPage } from './features/config/components/DesignCategoryPage';
 import { Sidebar } from './layouts/sidebar/Sidebar';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -64,7 +65,7 @@ function App() {
           {view === 'config-measurements' && <MeasurementTypePage />}
           {view === 'config-sizes' && <SizeChartPage />}
           {view === 'config-dresses' && <DressTypePage />}
-          {view === 'config-parts' && renderConfigPlaceholder('Dress Part Types')}
+          {view === 'config-parts' && <DesignCategoryPage />}
         </MainContent>
       </AppContainer>
     </ThemeProvider>
