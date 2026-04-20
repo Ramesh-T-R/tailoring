@@ -4,13 +4,19 @@ const API_URL = 'http://localhost:5001/api/size-charts';
 
 export const sizeChartService = {
   async getSizeTypes(): Promise<SizeType[]> {
-    const response = await fetch(API_URL);
+    const response = await fetch(`${API_URL}/types`);
     if (!response.ok) throw new Error('Failed to fetch size types');
     return response.json();
   },
 
+  async getAll(): Promise<SizeChart[]> {
+    const response = await fetch(`${API_URL}/charts`);
+    if (!response.ok) throw new Error('Failed to fetch size charts');
+    return response.json();
+  },
+
   async create(data: Omit<SizeChart, '_id'>): Promise<SizeChart> {
-    const response = await fetch(API_URL, {
+    const response = await fetch(`${API_URL}/charts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -20,7 +26,7 @@ export const sizeChartService = {
   },
 
   async update(id: string, data: Omit<SizeChart, '_id'>): Promise<SizeChart> {
-    const response = await fetch(`${API_URL}/size-charts/${id}`, {
+    const response = await fetch(`${API_URL}/charts/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -30,7 +36,7 @@ export const sizeChartService = {
   },
 
   async delete(id: string): Promise<void> {
-    const response = await fetch(`${API_URL}/${id}`, {
+    const response = await fetch(`${API_URL}/charts/${id}`, {
       method: 'DELETE',
     });
     if (!response.ok) throw new Error('Failed to delete size chart');

@@ -9,13 +9,20 @@ export const dressTypeService = {
     return response.json();
   },
 
-  async create(data: Omit<DressType, '_id'>): Promise<DressType> {
-    const response = await fetch(API_URL, {
-      method: 'POST',
+  async update(id: string, data: Omit<DressType, '_id'>): Promise<DressType> {
+    const response = await fetch(`${API_URL}/${id}`, {
+      method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    if (!response.ok) throw new Error('Failed to create dress type');
+    if (!response.ok) throw new Error('Failed to update dress type');
     return response.json();
+  },
+
+  async delete(id: string): Promise<void> {
+    const response = await fetch(`${API_URL}/${id}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) throw new Error('Failed to delete dress type');
   }
 };

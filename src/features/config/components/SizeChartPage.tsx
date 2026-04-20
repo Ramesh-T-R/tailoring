@@ -65,6 +65,24 @@ export const SizeChartPage: React.FC = () => {
     return false;
   };
 
+  const isInvalid = () => {
+    const seen = new Set();
+    for (const entry of entries) {
+      // Check for missing required fields
+      if (!entry.sizeTypeId || !entry.measurementTypeId || !entry.unit || entry.value === undefined || entry.value === null) return true;
+      
+      const key = `${entry.sizeTypeId}-${entry.measurementTypeId}-${entry.unit}`;
+      if (seen.has(key)) return true;
+      seen.add(key);
+      
+      // Check range
+      if (entry.value < 0 || entry.value > 250) return true;
+    }
+    return false;
+  };
+
+  const isFormIncomplete = () => !chartName || chartName.length > 50 || !gender || entries.length === 0;
+
   const toggleSelection = (index: number) => {
     if (selectedIndices.includes(index)) {
       setSelectedIndices(selectedIndices.filter(i => i !== index));
@@ -205,17 +223,18 @@ export const SizeChartPage: React.FC = () => {
           </Box>
         </DialogTitle>
         <DialogContent dividers>
-          {isDuplicate() ? (
+          {isInvalid() ? (
             <Alert severity="error" sx={{ mb: 2 }}>
-              Duplicate entry found: Please ensure size type, measurement type, and unit combinations are unique.
+              Validation Error: Please fix duplicate entries or values out of range (0-250).
             </Alert>
-          ) : (!chartName || entries.length === 0) && (
+          ) : isFormIncomplete() && (
             <Alert severity="warning" sx={{ mb: 2 }}>
-              Please provide a chart name and at least one measurement entry.
+              Please provide a chart name and at least one valid measurement entry.
             </Alert>
           )}
           <TextField
             autoFocus margin="dense" label="Size Chart Name" fullWidth variant="outlined"
+            inputProps={{ maxLength: 50 }}
             value={chartName} onChange={(e) => setName(e.target.value)} sx={{ mb: 2 }}
           />
           <FormControl fullWidth margin="dense" sx={{ mb: 3 }}>
@@ -268,8 +287,15 @@ export const SizeChartPage: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <TextField
-                      size="small" type="number" inputProps={{ step: "0.1" }}
-                      value={entry.value} onChange={(e) => handleEntryChange(index, 'value', parseFloat(e.target.value))}
+                      size="small" type="number" 
+                      inputProps={{ step: "0.1", min: 0, max: 250 }}
+                      value={entry.value} 
+                      onChange={(e) => {
+                          const val = parseFloat(e.target.value);
+                          handleEntryChange(index, 'value', val);
+                      }}
+                      error={entry.value! < 0 || entry.value! > 250}
+                      helperText={(entry.value! < 0 || entry.value! > 250) ? "0-250" : ""}
                     />
                   </TableCell>
                   <TableCell>
