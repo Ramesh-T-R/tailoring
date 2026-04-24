@@ -36,7 +36,7 @@ const ProjectSchema: Schema = new Schema({
   customerName: { type: String, required: true },
   gender: { type: String, enum: ['Male', 'Female'], required: true },
   dressType: { type: Schema.Types.ObjectId, ref: 'DressType', required: true },
-  selectedDesignCombinations: [{ type: Schema.Types.ObjectId, ref: 'DesignCombination' }],
+  selectedDesignCombinations: [{ type: Schema.Types.ObjectId }],
   sizeTypeId: { type: Schema.Types.ObjectId, ref: 'SizeType' },
   measurements: [{
     measurementTypeId: { type: Schema.Types.ObjectId, ref: 'MeasurementType', required: true },

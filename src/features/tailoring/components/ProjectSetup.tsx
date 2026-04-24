@@ -72,8 +72,8 @@ export const ProjectSetup: React.FC<Props> = ({ initialProject, onCancel, onGene
 
       // Find combination index
       if (selectedDressType && initialProject.selectedDesignCombinations?.length > 0) {
-        const comboId = initialProject.selectedDesignCombinations[0];
-        const idx = selectedDressType.designCombinations.findIndex(c => String(c._id) === String(comboId));
+        const comboId = String(initialProject.selectedDesignCombinations[0]);
+        const idx = selectedDressType.designCombinations.findIndex(c => String(c._id) === comboId);
         if (idx !== -1) setSelectedCombinationIndex(idx);
       }
     }
@@ -157,12 +157,15 @@ export const ProjectSetup: React.FC<Props> = ({ initialProject, onCancel, onGene
   };
 
   const handleSave = () => {
+    const selectedCombo = selectedCombinationIndex !== null ? selectedDressType?.designCombinations[selectedCombinationIndex] : null;
+    const selectedComboId = selectedCombo?._id ? String(selectedCombo._id) : null;
+
     onGenerate({
       id: initialProject?.id,
       name: projectName,
       gender,
       dressType: selectedDressTypeId,
-      selectedDesignCombinations: selectedCombinationIndex !== null ? [selectedDressType?.designCombinations[selectedCombinationIndex]._id] : [],
+      selectedDesignCombinations: selectedComboId ? [selectedComboId] : [],
       sizeTypeId: selectedSizeTypeId,
       measurements: Object.entries(measurements).map(([mtId, val]) => ({
         measurementTypeId: mtId,

@@ -14,7 +14,7 @@ export interface IDressType extends Document {
 
 const DesignCombinationSchema = new Schema({
   designIds: [{ type: Schema.Types.ObjectId, ref: 'Design', required: true }]
-}, { _id: false });
+});
 
 const DressTypeSchema: Schema = new Schema({
   name: { type: String, required: true },

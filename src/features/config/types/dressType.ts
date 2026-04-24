@@ -1,6 +1,7 @@
 import { SizeChart } from './sizeChart';
 
 export interface DesignCombination {
+  _id?: string;
   designIds: string[];
 }
 
