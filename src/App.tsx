@@ -6,6 +6,8 @@ import { MeasurementTypePage } from './features/config/components/MeasurementTyp
 import { SizeChartPage } from './features/config/components/SizeChartPage';
 import { DressTypePage } from './features/config/components/DressTypePage';
 import { DesignCategoryPage } from './features/config/components/DesignCategoryPage';
+import { DesignPage } from './features/config/components/DesignPage';
+import { DressTypeForm } from './features/config/components/DressTypeForm';
 import { Sidebar } from './layouts/sidebar/Sidebar';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -20,10 +22,14 @@ function App() {
     setView,
     projects,
     currentProject,
+    currentEditingDressType,
     handleCreateNew,
     handleGenerate,
-    handleOpenProject,
+    handleEditProject,
+    handleDeleteProject,
     handleNavigate,
+    handleEditDressType,
+    loadProjects
   } = useAppLogic();
 
   const renderConfigPlaceholder = (title: string) => (
@@ -44,7 +50,8 @@ function App() {
             <HomePage 
               projects={projects} 
               onCreateNew={handleCreateNew} 
-              onOpenProject={handleOpenProject}
+              onEditProject={handleEditProject}
+              onDeleteProject={handleDeleteProject}
             />
           )}
           
@@ -56,16 +63,25 @@ function App() {
           )}
 
           {view === 'studio' && currentProject && (
-            <ProjectDashboard 
+            <ProjectSetup 
               initialProject={currentProject} 
-              onExit={() => setView('home')} 
+              onCancel={() => setView('home')} 
+              onGenerate={handleGenerate} 
             />
           )}
 
           {view === 'config-measurements' && <MeasurementTypePage />}
           {view === 'config-sizes' && <SizeChartPage />}
-          {view === 'config-dresses' && <DressTypePage />}
+          {view === 'config-dresses' && <DressTypePage onEdit={handleEditDressType} />}
           {view === 'config-parts' && <DesignCategoryPage />}
+          {view === 'designs' && <DesignPage />}
+          {view === 'config-dress-edit' && (
+            <DressTypeForm 
+              initialData={currentEditingDressType} 
+              onSave={() => setView('config-dresses')}
+              onCancel={() => setView('config-dresses')}
+            />
+          )}
         </MainContent>
       </AppContainer>
     </ThemeProvider>

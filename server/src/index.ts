@@ -7,6 +7,7 @@ import measurementTypeRoutes from './routes/measurementTypeRoutes';
 import sizeChartRoutes from './routes/sizeChartRoutes';
 import dressTypeRoutes from './routes/dressTypeRoutes';
 import designCategoryRoutes from './routes/designCategoryRoutes';
+import designRoutes from './routes/designRoutes';
 
 dotenv.config();
 
@@ -28,6 +29,7 @@ app.use('/api/measurement-types', measurementTypeRoutes);
 app.use('/api/size-charts', sizeChartRoutes);
 app.use('/api/dress-types', dressTypeRoutes);
 app.use('/api/design-categories', designCategoryRoutes);
+app.use('/api/designs', designRoutes);
 
 // Database Connection
 console.log('Connecting to MongoDB...');

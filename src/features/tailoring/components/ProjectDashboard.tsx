@@ -1,238 +1,141 @@
-import React, { useState, useCallback, useRef } from 'react';
-import { ProjectState, MeasurementProfile } from '../../../types/project';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { ProjectState } from '../../../types/project';
 import { StoreManager } from '../../../store/projectStore';
 import { MeasurementForm } from '../../../components/MeasurementForm';
-import { StitchToolkit } from '../../../components/StitchToolkit';
-import { FabricExpert } from '../../../utils/fabricExpert';
-import { PatternCanvas } from '../../visualization/components/PatternCanvas';
-import { ThreeScene } from '../../visualization/components/ThreeScene';
 import { 
-  Box, Grid, Card, Typography, Icon, IconButton, 
-  Select, MenuItem, FormControl, Button, Divider
+  Box, Grid, Card, Typography, IconButton, 
+  Button, Divider, Paper, TextField, Alert
 } from '@mui/material';
-import { Dashboard, DesignServices, Settings, Undo, ArrowBack } from '@mui/icons-material';
+import { Undo, ArrowBack, Save } from '@mui/icons-material';
 
 import { projectService } from '../../../services/project.service';
 
 interface Props {
   initialProject: ProjectState;
   onExit: () => void;
+  onUpdateSuccess: () => void;
 }
 
-export const ProjectDashboard: React.FC<Props> = ({ initialProject, onExit }) => {
+export const ProjectDashboard: React.FC<Props> = ({ initialProject, onExit, onUpdateSuccess }) => {
   const [store] = useState(() => new StoreManager(initialProject));
   const [currentProject, setCurrentProject] = useState<ProjectState>(store.getState().project);
-  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [projectName, setProjectName] = useState(initialProject.name);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const syncWithServer = useCallback(async (project: ProjectState) => {
-    try {
-      await projectService.update(project.id, project);
-    } catch (error) {
-      console.error('Failed to sync with server:', error);
-    }
-  }, []);
-
-  const handleUpdateMeasurements = (measurements: MeasurementProfile) => {
-    // 1. Immediate local update for UI responsiveness
-    store.getState().updateMeasurements(measurements);
-    const updated = { ...store.getState().project };
-    setCurrentProject(updated);
-
-    // 2. Debounced server sync
-    if (debounceTimer.current) {
-      clearTimeout(debounceTimer.current);
+  const handleUpdateMeasurements = (measurements: any) => {
+    // Map array measurements to the Record format expected by MeasurementForm if needed, 
+    // but here currentProject.measurements is used by StoreManager.
+    // StoreManager updateMeasurements expects Record<string, number>
+    const mtRecord: Record<string, number> = {};
+    if (Array.isArray(measurements)) {
+        measurements.forEach(m => {
+            mtRecord[m.measurementTypeId] = m.value;
+        });
+    } else {
+        Object.assign(mtRecord, measurements);
     }
 
-    debounceTimer.current = setTimeout(() => {
-      syncWithServer(updated);
-    }, 500);
+    store.getState().updateMeasurements(mtRecord);
+    setCurrentProject({ ...store.getState().project });
   };
 
-  const handleFabricChange = async (fabricType: string) => {
-    const recommendations = FabricExpert.getRecommendations(fabricType);
-    const updatedProject = {
-      ...currentProject,
-      fabric: { ...currentProject.fabric, type: fabricType, ...recommendations } as any
-    };
-    store.getState().project = updatedProject;
-    setCurrentProject(updatedProject);
+  const handleSave = async () => {
+    setSaving(true);
+    setError(null);
     try {
+      const updatedProject = {
+        ...currentProject,
+        name: projectName
+      };
       await projectService.update(updatedProject.id, updatedProject);
-    } catch (error) {
-      console.error('Failed to sync fabric change:', error);
+      onUpdateSuccess();
+      onExit();
+    } catch (err) {
+      console.error('Failed to save project:', err);
+      setError('Failed to save project. Please try again.');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleUndo = async () => {
+  const handleUndo = () => {
     store.getState().undo();
-    const updated = { ...store.getState().project };
-    setCurrentProject(updated);
-    try {
-      await projectService.update(updated.id, updated);
-    } catch (error) {
-      console.error('Failed to sync undo:', error);
-    }
+    setCurrentProject({ ...store.getState().project });
   };
+
+  // Convert ProjectState.measurements (array) to Record for MeasurementForm
+  const measurementsRecord = React.useMemo(() => {
+    const record: Record<string, number> = {};
+    currentProject.measurements.forEach(m => {
+      record[m.measurementTypeId] = m.value;
+    });
+    return record;
+  }, [currentProject.measurements]);
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#f0f2f5', overflow: 'hidden' }}>
-      {/* Sidenav - Material Dashboard 2 Signature Look */}
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', bgcolor: '#f5f5f5' }}>
+      {/* Navbar */}
       <Box sx={{ 
-        width: 250, 
-        bgcolor: '#1a1c23', 
-        m: 2, 
-        borderRadius: 3, 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
         p: 2, 
-        display: { xs: 'none', lg: 'flex' },
-        flexDirection: 'column',
-        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
-        backgroundImage: 'linear-gradient(195deg, #42424a, #191919)'
+        bgcolor: '#fff', 
+        borderBottom: '1px solid #ddd' 
       }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2, mb: 4 }}>
-          <Icon sx={{ color: '#fff' }}><DesignServices /></Icon>
-          <Typography variant="h6" sx={{ color: '#fff', fontWeight: 600 }}>Tailor Guild</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <IconButton onClick={onExit}><ArrowBack /></IconButton>
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>Edit Project: {initialProject.name}</Typography>
         </Box>
-        <Divider sx={{ bgcolor: 'rgba(255,255,255,0.1)', mb: 2 }} />
-        
-        <Box sx={{ flex: 1 }}>
-          {[
-            { label: 'Dashboard', icon: <Dashboard />, active: true },
-            { label: 'Studio', icon: <DesignServices />, active: false },
-            { label: 'Settings', icon: <Settings />, active: false },
-          ].map((item) => (
-            <Box key={item.label} sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: 2, 
-              p: 1.5, 
-              mb: 1,
-              borderRadius: 1,
-              bgcolor: item.active ? 'primary.main' : 'transparent',
-              color: '#fff',
-              cursor: 'pointer',
-              '&:hover': { bgcolor: item.active ? 'primary.main' : 'rgba(255,255,255,0.05)' }
-            }}>
-              <Icon fontSize="small">{item.icon}</Icon>
-              <Typography variant="body2" sx={{ fontWeight: item.active ? 600 : 400 }}>{item.label}</Typography>
-            </Box>
-          ))}
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <IconButton onClick={handleUndo} title="Undo changes">
+            <Undo />
+          </IconButton>
+          <Button 
+            variant="contained" 
+            startIcon={<Save />} 
+            onClick={handleSave}
+            loading={saving}
+          >
+            Save Changes
+          </Button>
         </Box>
-
-        <Button variant="contained" fullWidth sx={{ bgcolor: '#4caf50', mt: 'auto', '&:hover': { bgcolor: '#43a047' } }}>
-          Documentation
-        </Button>
       </Box>
 
-      {/* Main Content Area */}
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', p: 3, overflowY: 'auto' }}>
-        {/* Navbar */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-          <Box>
-            <Typography variant="body2" color="textSecondary" sx={{ mb: 0.5 }}>
-              Pages / Dashboard
-            </Typography>
-            <Typography variant="h6" sx={{ fontWeight: 700 }}>{currentProject.name}</Typography>
-          </Box>
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <IconButton onClick={handleUndo} size="small" sx={{ bgcolor: '#fff', boxShadow: 1 }}>
-              <Undo />
-            </IconButton>
-            <Button 
-              variant="contained" 
-              startIcon={<ArrowBack />} 
-              onClick={onExit}
-              sx={{ bgcolor: '#fff', color: '#000', '&:hover': { bgcolor: '#f8f9fa' } }}
-            >
-              Back
-            </Button>
-          </Box>
-        </Box>
+      <Box sx={{ flex: 1, p: 4, overflowY: 'auto' }}>
+        <Grid container spacing={3} justifyContent="center">
+          <Grid item xs={12} md={8}>
+            {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
+            
+            <Paper sx={{ p: 3, mb: 3 }}>
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>Project Details</Typography>
+              <TextField
+                label="Project Name"
+                fullWidth
+                value={projectName}
+                onChange={(e) => setProjectName(e.target.value)}
+                sx={{ mb: 2 }}
+              />
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
+                  <Typography variant="body2" color="textSecondary">Gender</Typography>
+                  <Typography variant="body1">{currentProject.gender}</Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="body2" color="textSecondary">Dress Type ID</Typography>
+                  <Typography variant="body1">{currentProject.dressType}</Typography>
+                </Grid>
+              </Grid>
+            </Paper>
 
-        {/* Dashboard Grid */}
-        <Grid container spacing={3}>
-          {/* 3D Visualizer Card */}
-          <Grid size={{ xs: 12, lg: 7 }}>
-            <Card sx={{ position: 'relative', pt: 2, overflow: 'visible' }}>
-              <Box sx={{ 
-                position: 'absolute', 
-                top: -24, 
-                left: 16, 
-                right: 16, 
-                height: 300, 
-                bgcolor: 'primary.main', 
-                borderRadius: 2,
-                boxShadow: '0 4px 20px 0 rgba(0,0,0,0.14), 0 7px 10px -5px rgba(26,115,232,0.4)',
-                backgroundImage: 'linear-gradient(195deg, #49a3f1, #1A73E8)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <ThreeScene 
-                  measurements={currentProject.measurements} 
-                  dressType={currentProject.dressType}
-                  fabric={currentProject.fabric}
-                />
-              </Box>
-              <Box sx={{ mt: 32, p: 3 }}>
-                <Typography variant="h6" sx={{ fontWeight: 700 }}>3D Virtual Mannequin</Typography>
-                <Typography variant="body2" color="textSecondary">Live parametric preview for {currentProject.customerName}</Typography>
-                <Divider sx={{ my: 2 }} />
-                <Typography variant="caption" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <Icon fontSize="inherit">access_time</Icon> Updated {currentProject.version} times
-                </Typography>
-              </Box>
-            </Card>
-          </Grid>
-
-          {/* Pattern Canvas Card */}
-          <Grid size={{ xs: 12, lg: 5 }}>
-            <Card sx={{ p: 3 }}>
-              <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>Geometric Blueprint</Typography>
-              <Box sx={{ bgcolor: '#f8f9fa', borderRadius: 2, border: '1px dashed #dee2e6' }}>
-                <PatternCanvas pieces={currentProject.pieces} />
-              </Box>
-            </Card>
-          </Grid>
-
-          {/* Inputs & Toolkit */}
-          <Grid size={{ xs: 12, lg: 4 }}>
-            <Card sx={{ p: 3 }}>
-              <Typography variant="h6" sx={{ mb: 3, fontWeight: 700 }}>Measurement Protocol</Typography>
+            <Paper sx={{ p: 3 }}>
+              <Typography variant="h6" sx={{ mb: 3, fontWeight: 700 }}>Measurements</Typography>
               <MeasurementForm 
-                initialValues={currentProject.measurements} 
+                initialValues={measurementsRecord} 
                 onUpdate={handleUpdateMeasurements} 
               />
-            </Card>
-          </Grid>
-
-          <Grid size={{ xs: 12, lg: 8 }}>
-            <Card sx={{ p: 0, overflow: 'hidden' }}>
-              <Box sx={{ 
-                p: 2, 
-                bgcolor: '#ec407a', 
-                backgroundImage: 'linear-gradient(195deg, #ec407a, #d81b60)',
-                color: '#fff' 
-              }}>
-                <Typography variant="h6" sx={{ fontWeight: 700 }}>Master Recommendations</Typography>
-              </Box>
-              <Box sx={{ p: 3 }}>
-                <StitchToolkit fabric={currentProject.fabric} pieces={currentProject.pieces} />
-                <Box sx={{ mt: 3 }}>
-                  <Typography variant="subtitle2" sx={{ mb: 1 }}>Material Type</Typography>
-                  <FormControl fullWidth size="small">
-                    <Select 
-                      value={currentProject.fabric.type}
-                      onChange={(e) => handleFabricChange(e.target.value as string)}
-                    >
-                      <MenuItem value="Linen">Italian Linen</MenuItem>
-                      <MenuItem value="Silk">Premium Silk</MenuItem>
-                      <MenuItem value="Denim">Raw Denim</MenuItem>
-                      <MenuItem value="Jersey">Technical Jersey</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Box>
-              </Box>
-            </Card>
+            </Paper>
           </Grid>
         </Grid>
       </Box>

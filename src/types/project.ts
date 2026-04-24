@@ -1,16 +1,5 @@
 export type Gender = 'Male' | 'Female' | 'Other';
 
-export interface MeasurementProfile {
-  gender: Gender;
-  height: number;
-  chest: number;
-  waist: number;
-  hips: number;
-  shoulderWidth: number;
-  armLength: number;
-  neckCircumference: number;
-}
-
 export interface Vector2D {
   x: number;
   y: number;
@@ -33,13 +22,20 @@ export interface FabricProperty {
   recommendedThread: string;
 }
 
+export interface ProjectMeasurement {
+  measurementTypeId: string;
+  value: number;
+}
+
 export interface ProjectState {
   id: string;
   name: string;
   customerName: string;
-  gender: Gender;
-  dressType: string;
-  measurements: MeasurementProfile;
+  gender: 'Male' | 'Female';
+  dressType: string; // ID
+  selectedDesignCombinations: string[]; // IDs
+  sizeTypeId: string; // ID
+  measurements: ProjectMeasurement[];
   fabric: FabricProperty;
   pieces: PatternPiece[];
   version: number;

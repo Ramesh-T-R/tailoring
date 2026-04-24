@@ -1,22 +1,16 @@
 import { z } from 'zod';
 
-export const MeasurementSchema = z.object({
-  gender: z.string(),
-  height: z.number().min(50).max(250),
-  chest: z.number().min(20).max(200),
-  waist: z.number().min(20).max(200),
-  hips: z.number().min(20).max(200),
-  shoulderWidth: z.number().min(10).max(100),
-  armLength: z.number().min(10).max(150),
-  neckCircumference: z.number().min(10).max(80),
+export const ProjectMeasurementSchema = z.object({
+  measurementTypeId: z.string(),
+  value: z.number()
 });
 
 export const FabricSchema = z.object({
   type: z.string(),
   weight: z.string(),
   stretch: z.number().min(0).max(1),
-  recommendedNeedle: z.string(),
-  recommendedPresserFoot: z.string(),
+  recommendedNeedle: z.string().optional(),
+  recommendedPresserFoot: z.string().optional(),
 });
 
 export const PieceSchema = z.object({
@@ -31,9 +25,11 @@ export const ProjectSchema = z.object({
   id: z.string(),
   name: z.string(),
   customerName: z.string(),
-  gender: z.string(),
+  gender: z.enum(['Male', 'Female']),
   dressType: z.string(),
-  measurements: MeasurementSchema,
+  selectedDesignCombinations: z.array(z.any()).optional(),
+  sizeTypeId: z.string().optional(),
+  measurements: z.array(ProjectMeasurementSchema),
   fabric: FabricSchema,
   pieces: z.array(PieceSchema),
   version: z.number().optional(),

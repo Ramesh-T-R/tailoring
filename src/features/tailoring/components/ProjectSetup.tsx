@@ -1,110 +1,407 @@
-import React, { useState } from 'react';
-import { Gender } from '../../../types/project';
-import { X, ArrowRight, User, Shirt, Maximize } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  Box, Typography, Button, TextField, Select, MenuItem, 
+  FormControl, InputLabel, Dialog, DialogTitle, DialogContent, 
+  DialogActions, Chip, Paper, Table, TableBody, TableCell, 
+  TableHead, TableRow, IconButton, Link, CircularProgress, Alert,
+  Grid
+} from '@mui/material';
+import { Close } from '@mui/icons-material';
+import { dressTypeService } from '../../config/api/dressType.service';
+import { sizeChartService } from '../../config/api/sizeChart.service';
+import { designCategoryService } from '../../config/api/designCategory.service';
+import { designService } from '../../config/api/design.service';
+import { measurementTypeService } from '../../config/api/measurementType.service';
+import { DressType, DesignCombination } from '../../config/types/dressType';
+import { SizeChart } from '../../config/types/sizeChart';
+import { DesignCategory } from '../../config/types/designCategory';
+import { IDesign } from '../../config/types/design';
+import { MeasurementType } from '../../config/types/measurementType';
+import { SizeType } from '../../config/types/sizeType';
+import { PatternVisualizer } from '../../visualization/components/PatternVisualizer';
+import { ProjectState } from '../../../types/project';
 
 interface Props {
+  initialProject?: ProjectState;
   onCancel: () => void;
-  onGenerate: (config: { gender: Gender, dressType: string, size: string }) => void;
+  onGenerate: (data: any) => void;
 }
 
-export const ProjectSetup: React.FC<Props> = ({ onCancel, onGenerate }) => {
-  const [gender, setGender] = useState<Gender>('Male');
-  const [dressType, setDressType] = useState('Formal Shirt');
-  const [size, setSize] = useState('M');
+export const ProjectSetup: React.FC<Props> = ({ initialProject, onCancel, onGenerate }) => {
+  // Data State
+  const [dressTypes, setDressTypes] = useState<DressType[]>([]);
+  const [sizeCharts, setSizeCharts] = useState<SizeChart[]>([]);
+  const [categories, setCategories] = useState<DesignCategory[]>([]);
+  const [designs, setDesigns] = useState<IDesign[]>([]);
+  const [measurementTypes, setMeasurementTypes] = useState<MeasurementType[]>([]);
+  const [sizeTypes, setSizeTypes] = useState<SizeType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Selection State
+  const [projectName, setProjectName] = useState(initialProject?.name || '');
+  const [gender, setGender] = useState<'Male' | 'Female'>(initialProject?.gender || 'Male');
+  const [selectedDressTypeId, setSelectedDressTypeId] = useState(initialProject?.dressType || '');
+  const [selectedCombinationIndex, setSelectedCombinationIndex] = useState<number | null>(null);
+  const [selectedSizeTypeId, setSelectedSizeTypeId] = useState(initialProject?.sizeTypeId || '');
+  const [measurements, setMeasurements] = useState<Record<string, number>>({});
+  const [unit, setUnit] = useState<'in' | 'cm'>('in');
+
+  // Modals
+  const [comboModalOpen, setComboModalOpen] = useState(false);
+  const [chartModalOpen, setChartModalOpen] = useState(false);
+
+  useEffect(() => {
+    loadInitialData();
+  }, []);
+
+  const selectedDressType = useMemo(() => 
+    dressTypes.find(dt => dt._id === selectedDressTypeId) || null, 
+    [dressTypes, selectedDressTypeId]
+  );
+
+  // Initialize measurements and combinations from initialProject once data is loaded
+  useEffect(() => {
+    if (!loading && initialProject) {
+      // Set measurements
+      const mtRecord: Record<string, number> = {};
+      initialProject.measurements.forEach(m => {
+        mtRecord[m.measurementTypeId] = m.value;
+      });
+      setMeasurements(mtRecord);
+
+      // Find combination index
+      if (selectedDressType && initialProject.selectedDesignCombinations?.length > 0) {
+        const comboId = initialProject.selectedDesignCombinations[0];
+        const idx = selectedDressType.designCombinations.findIndex(c => String(c._id) === String(comboId));
+        if (idx !== -1) setSelectedCombinationIndex(idx);
+      }
+    }
+  }, [loading, initialProject, dressTypes, selectedDressTypeId, selectedDressType]);
+
+  const loadInitialData = async () => {
+    setLoading(true);
+    try {
+      const [dt, sc, cat, des, mt, st] = await Promise.all([
+        dressTypeService.getAll().catch(() => []),
+        sizeChartService.getAll().catch(() => []),
+        designCategoryService.getAll().catch(() => []),
+        designService.getAll().catch(() => []),
+        measurementTypeService.getAll().catch(() => []),
+        sizeChartService.getSizeTypes().catch(() => [])
+      ]);
+      setDressTypes(dt);
+      setSizeCharts(sc);
+      setCategories(cat);
+      setDesigns(des);
+      setMeasurementTypes(mt);
+      setSizeTypes(st);
+      setError(null);
+    } catch (error) {
+      console.error('Failed to load project setup data:', error);
+      setError('Failed to load configuration data. Please check your connection.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const selectedSizeChart = useMemo(() => {
+    if (!selectedDressType) return null;
+    const chartId = typeof selectedDressType.sizeChartId === 'string' 
+      ? selectedDressType.sizeChartId 
+      : selectedDressType.sizeChartId?._id;
+    return sizeCharts.find(sc => sc._id === chartId) || null;
+  }, [selectedDressType, sizeCharts]);
+
+  const availableSizeTypeIds = useMemo(() => {
+    if (!selectedSizeChart?.entries) return [];
+    const ids = new Set(selectedSizeChart.entries
+      .filter(e => e.unit === unit)
+      .map(e => {
+        const id = typeof e.sizeTypeId === 'string' ? e.sizeTypeId : (e.sizeTypeId as any)?._id;
+        return String(id);
+      })
+    );
+    return Array.from(ids).filter(id => id && id !== 'undefined');
+  }, [selectedSizeChart, unit]);
+
+  const getSizeTypeName = (id: string) => sizeTypes.find(st => String(st._id) === id)?.name || id;
+
+  // Handle Size Type Change - Populate measurements
+  useEffect(() => {
+    if (selectedSizeTypeId && selectedSizeChart && !initialProject) {
+      const newMeasurements: Record<string, number> = {};
+      selectedSizeChart.entries
+        .forEach(e => {
+          const eStId = typeof e.sizeTypeId === 'string' ? e.sizeTypeId : (e.sizeTypeId as any)?._id;
+          const eMtId = typeof e.measurementTypeId === 'string' ? e.measurementTypeId : (e.measurementTypeId as any)?._id;
+          
+          if (String(eStId) === selectedSizeTypeId) {
+            let val = e.value;
+            val = convertValue(val, (e.unit as 'in' | 'cm') || 'cm', unit);
+            newMeasurements[String(eMtId)] = Number(val.toFixed(2));
+          }
+        });
+      setMeasurements(newMeasurements);
+    }
+  }, [selectedSizeTypeId, selectedSizeChart, unit, initialProject]);
+
+  const getCategoryName = (id: string) => categories.find(c => String(c._id) === String(id))?.name || id;
+  const getDesignName = (id: string) => designs.find(d => String(d._id) === String(id))?.name || id;
+
+  const getDesignCategoryName = (designId: string) => {
+    const design = designs.find(d => String(d._id) === String(designId));
+    if (!design) return '';
+    const catId = typeof design.category === 'string' ? design.category : design.category?._id;
+    return getCategoryName(String(catId));
+  };
+
+  const handleSave = () => {
+    onGenerate({
+      id: initialProject?.id,
+      name: projectName,
+      gender,
+      dressType: selectedDressTypeId,
+      selectedDesignCombinations: selectedCombinationIndex !== null ? [selectedDressType?.designCombinations[selectedCombinationIndex]._id] : [],
+      sizeTypeId: selectedSizeTypeId,
+      measurements: Object.entries(measurements).map(([mtId, val]) => ({
+        measurementTypeId: mtId,
+        value: val
+      }))
+    });
+  };
+
+  const convertValue = (val: number, fromUnit: 'in' | 'cm', toUnit: 'in' | 'cm') => {
+    if (fromUnit === toUnit) return val;
+    if (fromUnit === 'cm' && toUnit === 'in') return val / 2.54;
+    return val * 2.54;
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-atelier-paper/80 backdrop-blur-xl animate-in fade-in duration-500">
-      <div className="w-full max-w-2xl bg-white rounded-[40px] shadow-2xl shadow-black/10 border border-white overflow-hidden flex flex-col animate-in zoom-in-95 duration-500">
-        <div className="p-8 border-b border-slate-50 flex justify-between items-center">
-          <div>
-            <h2 className="font-serif text-3xl text-atelier-ink">Initialize Project</h2>
-            <p className="text-xs font-bold uppercase tracking-widest text-atelier-gold mt-1">Scientific Configuration</p>
-          </div>
-          <button onClick={onCancel} className="p-3 hover:bg-slate-50 rounded-full transition-colors">
-            <X size={24} className="text-slate-300" />
-          </button>
-        </div>
+    <Box sx={{ p: 4, height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#f5f5f5' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 4 }}>
+        <Typography variant="h4" sx={{ fontWeight: 700 }}>
+          {initialProject ? 'Edit Project' : 'New Project'}
+        </Typography>
+        <IconButton onClick={onCancel}><Close /></IconButton>
+      </Box>
 
-        <div className="p-10 space-y-12">
-          {/* Gender Select */}
-          <section>
-            <div className="flex items-center gap-2 mb-6">
-              <User size={16} className="text-atelier-gold" />
-              <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Gender Profile</h3>
-            </div>
-            <div className="flex gap-4">
-              {(['Male', 'Female', 'Other'] as const).map((g) => (
-                <button
-                  key={g}
-                  onClick={() => setGender(g)}
-                  className={`flex-1 py-4 rounded-2xl border-2 transition-all font-bold text-sm ${
-                    gender === g 
-                    ? 'bg-atelier-ink text-white border-atelier-ink shadow-lg shadow-black/20' 
-                    : 'bg-white text-slate-400 border-slate-100 hover:border-atelier-gold/30'
-                  }`}
-                >
-                  {g}
-                </button>
-              ))}
-            </div>
-          </section>
+      {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
 
-          {/* Dress Type */}
-          <section>
-            <div className="flex items-center gap-2 mb-6">
-              <Shirt size={16} className="text-atelier-gold" />
-              <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Apparel Category</h3>
-            </div>
-            <div className="relative">
-              <select 
-                value={dressType}
-                onChange={(e) => setDressType(e.target.value)}
-                className="w-full p-5 bg-slate-50 border-none rounded-2xl appearance-none outline-none font-serif italic text-xl text-atelier-ink cursor-pointer focus:ring-2 focus:ring-atelier-gold/20 transition-all"
+      <Grid container spacing={4} sx={{ flex: 1, overflow: 'hidden' }}>
+        {/* Left Side: Form */}
+        <Grid item xs={12} md={6} sx={{ overflowY: 'auto', height: '100%' }}>
+          <Paper sx={{ p: 3, mb: 3 }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>General Info</Typography>
+            <TextField 
+              label="Project Name" fullWidth margin="dense" 
+              value={projectName} onChange={(e) => setProjectName(e.target.value)} 
+            />
+            
+            <FormControl fullWidth margin="dense">
+              <InputLabel>Gender</InputLabel>
+              <Select value={gender} label="Gender" onChange={(e) => {
+                setGender(e.target.value as 'Male' | 'Female');
+                setSelectedDressTypeId('');
+                setSelectedCombinationIndex(null);
+                setSelectedSizeTypeId('');
+                setMeasurements({});
+              }}>
+                <MenuItem value="Male">Male</MenuItem>
+                <MenuItem value="Female">Female</MenuItem>
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth margin="dense" disabled={!gender}>
+              <InputLabel>Dress Type</InputLabel>
+              <Select 
+                value={selectedDressTypeId} 
+                label="Dress Type" 
+                onChange={(e) => {
+                  setSelectedDressTypeId(e.target.value);
+                  setSelectedCombinationIndex(null);
+                  setSelectedSizeTypeId('');
+                  setMeasurements({});
+                }}
               >
-                <option value="Formal Shirt">Bespoke Formal Shirt</option>
-                <option value="Trousers">Tailored Trousers</option>
-                <option value="Skirt">Pencil Skirt</option>
-                <option value="Jacket">Structured Jacket</option>
-              </select>
-              <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-atelier-gold">
-                ▼
-              </div>
-            </div>
-          </section>
+                {dressTypes.filter(dt => dt.gender === gender).map(dt => (
+                  <MenuItem key={dt._id} value={dt._id}>{dt.name}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Paper>
 
-          {/* Size Select */}
-          <section>
-            <div className="flex items-center gap-2 mb-6">
-              <Maximize size={16} className="text-atelier-gold" />
-              <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Standard Size Reference</h3>
-            </div>
-            <div className="flex gap-4">
-              {(['S', 'M', 'L', 'XL'] as const).map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setSize(s)}
-                  className={`w-16 h-16 rounded-2xl border-2 transition-all font-serif italic text-xl flex items-center justify-center ${
-                    size === s 
-                    ? 'bg-atelier-gold text-white border-atelier-gold shadow-lg shadow-atelier-gold/20' 
-                    : 'bg-white text-slate-400 border-slate-100 hover:border-atelier-gold/30'
-                  }`}
-                >
-                  {s}
-                </button>
+          {selectedDressType && (
+            <>
+              <Paper sx={{ p: 3, mb: 3 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                  <Typography variant="h6">Design Combinations</Typography>
+                  <Link component="button" onClick={() => setComboModalOpen(true)}>Select design combinations</Link>
+                </Box>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {selectedCombinationIndex !== null && selectedDressType.designCombinations[selectedCombinationIndex]?.designIds.map(dId => (
+                    <Chip key={dId} size="small" variant="filled" label={`${getDesignCategoryName(dId)}:${getDesignName(dId)}`} sx={{ bgcolor: '#e3f2fd' }} />
+                  ))}
+                </Box>
+              </Paper>
+
+              <Paper sx={{ p: 3, mb: 3 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                  <Typography variant="h6">Size & Measurements</Typography>
+                  <Link component="button" onClick={() => setChartModalOpen(true)}>View Size Chart</Link>
+                </Box>
+                
+                <FormControl fullWidth size="small" sx={{ mb: 3 }}>
+                  <InputLabel>Standard Size</InputLabel>
+                  <Select 
+                    value={selectedSizeTypeId} 
+                    label="Standard Size"
+                    onChange={(e) => setSelectedSizeTypeId(e.target.value)}
+                  >
+                    {availableSizeTypeIds.map(stId => (
+                      <MenuItem key={stId} value={stId}>{getSizeTypeName(stId)}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                  {measurementTypes.map(mt => (
+                    <TextField 
+                      key={mt._id}
+                      label={mt.name}
+                      size="small"
+                      type="number"
+                      value={measurements[mt._id!] || ''}
+                      onChange={(e) => setMeasurements({...measurements, [mt._id!]: Number(e.target.value)})}
+                      InputProps={{ endAdornment: <Typography variant="caption">{unit}</Typography> }}
+                    />
+                  ))}
+                </Box>
+              </Paper>
+            </>
+          )}
+
+          <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
+            <Button variant="contained" color="primary" fullWidth size="large" onClick={handleSave} disabled={!projectName || !selectedDressTypeId}>
+              Save Project
+            </Button>
+            <Button variant="outlined" fullWidth size="large" onClick={onCancel}>
+              Cancel
+            </Button>
+          </Box>
+        </Grid>
+
+        {/* Right Side: Visualizer */}
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ height: '100%', bgcolor: '#000', borderRadius: 2, overflow: 'hidden', position: 'relative' }}>
+            <PatternVisualizer 
+              measurements={measurements} 
+              measurementTypes={measurementTypes}
+            />
+            <Box sx={{ position: 'absolute', bottom: 20, left: 20, color: '#fff' }}>
+              <Typography variant="h6" sx={{ opacity: 0.8 }}>Real-time Blueprint</Typography>
+              <Typography variant="caption" sx={{ opacity: 0.6 }}>Technical draft updates immediately</Typography>
+            </Box>
+          </Paper>
+        </Grid>
+      </Grid>
+
+      {/* Design Combination Modal */}
+      <Dialog open={comboModalOpen} onClose={() => setComboModalOpen(false)} fullWidth maxWidth="md">
+        <DialogTitle>Select Design Combination</DialogTitle>
+        <DialogContent dividers>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Designs</TableCell>
+                <TableCell align="right">Action</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {selectedDressType?.designCombinations.map((combo, idx) => (
+                <TableRow key={idx}>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      {combo.designIds.map(dId => (
+                        <Chip key={dId} size="small" label={`${getDesignCategoryName(dId)}:${getDesignName(dId)}`} />
+                      ))}
+                    </Box>
+                  </TableCell>
+                  <TableCell align="right">
+                    <Button 
+                      size="small" 
+                      variant="outlined"
+                      onClick={() => {
+                        setSelectedCombinationIndex(idx);
+                        setComboModalOpen(false);
+                      }}
+                    >
+                      Select
+                    </Button>
+                  </TableCell>
+                </TableRow>
               ))}
-            </div>
-          </section>
-        </div>
+            </TableBody>
+          </Table>
+        </DialogContent>
+      </Dialog>
 
-        <div className="p-8 bg-slate-50 mt-auto flex justify-end">
-          <button 
-            onClick={() => onGenerate({ gender, dressType, size })}
-            className="group flex items-center gap-4 bg-atelier-ink text-white px-10 py-5 rounded-full font-bold text-xs tracking-[0.2em] uppercase hover:scale-105 transition-all shadow-xl shadow-black/10"
-          >
-            Generate Workspace <ArrowRight size={18} className="text-atelier-gold group-hover:translate-x-1 transition-transform" />
-          </button>
-        </div>
-      </div>
-    </div>
+      {/* Size Chart Modal */}
+      <Dialog open={chartModalOpen} onClose={() => setChartModalOpen(false)} fullWidth maxWidth="lg">
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          Size Chart: {selectedSizeChart?.name || 'N/A'}
+          <FormControl size="small" sx={{ width: 200 }}>
+            <InputLabel>Metric Unit</InputLabel>
+            <Select 
+              value={unit} 
+              label="Metric Unit"
+              onChange={(e) => setUnit(e.target.value as 'in' | 'cm')}
+            >
+              <MenuItem value="in">Inch (in)</MenuItem>
+              <MenuItem value="cm">Centimeter (cm)</MenuItem>
+            </Select>
+          </FormControl>
+        </DialogTitle>
+        <DialogContent dividers>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 700 }}>Size Type</TableCell>
+                {measurementTypes.map(mt => (
+                  <TableCell key={mt._id} sx={{ fontWeight: 700 }}>{mt.name}</TableCell>
+                ))}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {availableSizeTypeIds.map(stId => (
+                <TableRow key={stId}>
+                  <TableCell sx={{ fontWeight: 700 }}>{getSizeTypeName(stId)}</TableCell>
+                  {measurementTypes.map(mt => {
+                    const entry = selectedSizeChart?.entries.find(e => {
+                      const eStId = typeof e.sizeTypeId === 'string' ? e.sizeTypeId : (e.sizeTypeId as any)?._id;
+                      const eMtId = typeof e.measurementTypeId === 'string' ? e.measurementTypeId : (e.measurementTypeId as any)?._id;
+                      return String(eStId) === stId && String(eMtId) === String(mt._id) && e.unit === unit;
+                    });
+                    const val = entry?.value || 0;
+                    return <TableCell key={mt._id}>{val.toFixed(2)}</TableCell>;
+                  })}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setChartModalOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 };

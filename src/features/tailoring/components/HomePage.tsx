@@ -1,116 +1,108 @@
 import React from 'react';
-import { ProjectState } from '../../../types/project';
 import { 
-  Grid, Typography, Button, IconButton, 
-  Container, Avatar, Divider
+  Typography, Table, TableBody, TableCell, TableHead, TableRow, 
+  Button, Box, IconButton, Paper, Tooltip
 } from '@mui/material';
-import { 
-  Add, Folder, Schedule, ChevronRight, DesignServices, 
-  Notifications, Person, Search
-} from '@mui/icons-material';
-import { styled } from '@mui/material/styles';
-import {
-  HomeRoot, StyledAppBar, StyledToolbar, NavbarBrand, NavbarActions,
-  WelcomeHeader, EmptyStateCard, ProjectCard, CardHeader, DressTypeBadge,
-  VersionBadge, CardFooter, FooterSection
-} from './HomePage.styles';
+import { Add, Edit, Delete, FolderOpen } from '@mui/icons-material';
+import { ProjectState } from '../../../types/project';
+import { PageHeader, StyledTableContainer } from '../../config/styles/measurementType.styles';
 
 interface Props {
   projects: ProjectState[];
   onCreateNew: () => void;
-  onOpenProject: (project: ProjectState) => void;
+  onEditProject: (project: ProjectState) => void;
+  onDeleteProject: (id: string) => void;
 }
 
-export const HomePage: React.FC<Props> = ({ projects, onCreateNew, onOpenProject }) => {
+export const HomePage: React.FC<Props> = ({ projects, onCreateNew, onEditProject, onDeleteProject }) => {
   return (
-    <HomeRoot>
-      {/* Navbar */}
-      <StyledAppBar position="static">
-        <Container maxWidth="xl">
-          <StyledToolbar>
-            <NavbarBrand>
-              <DesignServices color="primary" />
-              <Typography variant="h6" sx={{ fontWeight: 700 }}>Guild Admin</Typography>
-            </NavbarBrand>
-            
-            <NavbarActions>
-              <IconButton size="small"><Search /></IconButton>
-              <IconButton size="small"><Notifications /></IconButton>
-              <IconButton size="small"><Person /></IconButton>
-              <Button variant="contained" size="small" onClick={onCreateNew} startIcon={<Add />}>
-                New Project
-              </Button>
-            </NavbarActions>
-          </StyledToolbar>
-        </Container>
-      </StyledAppBar>
+    <Box sx={{ p: 4 }}>
+      <PageHeader>
+        <Typography variant="h4" sx={{ fontWeight: 700 }}>Projects</Typography>
+        <Button 
+          variant="contained" 
+          startIcon={<Add />} 
+          onClick={onCreateNew}
+        >
+          New Project
+        </Button>
+      </PageHeader>
 
-      <Container maxWidth="xl" sx={{ mt: 6, pb: 6 }}>
-        {/* Welcome Header */}
-        <WelcomeHeader>
-          <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>Welcome back, Master Ramesh</Typography>
-          <Typography variant="body1" color="textSecondary">Manage your bespoke collections and technical blueprints.</Typography>
-        </WelcomeHeader>
-
-        {/* Project Grid */}
-        <Grid container spacing={3}>
-          {projects.length === 0 ? (
-            <Grid size={{ xs: 12 }}>
-              <EmptyStateCard>
-                <Folder sx={{ fontSize: 64, color: '#dee2e6', mb: 2 }} />
-                <Typography variant="h6" color="textSecondary">No projects yet</Typography>
-                <Button variant="text" onClick={onCreateNew} sx={{ mt: 1 }}>Start your first project</Button>
-              </EmptyStateCard>
-            </Grid>
-          ) : (
-            projects.map((project) => (
-              <Grid size={{ xs: 12, md: 6, lg: 4 }} key={project.id}>
-                <ProjectCard onClick={() => onOpenProject(project)}>
-                  <CardHeader>
-                    <DressTypeBadge>
-                      <Typography variant="caption" sx={{ color: '#fff', fontWeight: 700, textTransform: 'uppercase' }}>
-                        {project.dressType}
-                      </Typography>
-                    </DressTypeBadge>
-                    <VersionBadge>
-                      <Schedule sx={{ fontSize: 14 }} />
-                      <Typography variant="caption" sx={{ fontWeight: 700 }}>v{project.version}</Typography>
-                    </VersionBadge>
-                  </CardHeader>
-                  
-                  <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>{project.name}</Typography>
-                  <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>Customer: {project.customerName}</Typography>
-                  
-                  <Divider sx={{ my: 2 }} />
-                  
-                  <CardFooter>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <Avatar sx={{ width: 24, height: 24, fontSize: 10, bgcolor: '#7b809a' }}>{project.gender[0]}</Avatar>
-                      <Typography variant="caption" sx={{ mt: 0.5, fontWeight: 700 }}>{project.measurements.chest}cm Chest</Typography>
+      <StyledTableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell sx={{ fontWeight: 700 }}>Project Name</TableCell>
+              <TableCell sx={{ fontWeight: 700 }}>Gender</TableCell>
+              <TableCell sx={{ fontWeight: 700 }}>Dress Type</TableCell>
+              <TableCell sx={{ fontWeight: 700, width: 120 }}>Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {projects.length > 0 ? (
+              projects.map((project) => (
+                <TableRow 
+                  key={project.id} 
+                  hover 
+                  sx={{ cursor: 'pointer' }} 
+                  onClick={() => onEditProject(project)}
+                >
+                  <TableCell>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <FolderOpen fontSize="small" color="primary" />
+                      {project.name}
                     </Box>
-                    <ChevronRight color="disabled" />
-                  </CardFooter>
-                </ProjectCard>
-              </Grid>
-            ))
-          )}
-        </Grid>
-      </Container>
-
-      {/* Footer */}
-      <FooterSection>
-        <Typography variant="caption" color="textSecondary">
-          © 2026 Thaiyalagam. Built with Material Dashboard 2.
-        </Typography>
-        <Box sx={{ mt: 1, display: 'flex', justifyContent: 'center', gap: 3 }}>
-          <Typography variant="caption" sx={{ fontWeight: 700, cursor: 'pointer' }}>Documentation</Typography>
-          <Typography variant="caption" sx={{ fontWeight: 700, cursor: 'pointer' }}>License</Typography>
-          <Typography variant="caption" sx={{ fontWeight: 700, cursor: 'pointer' }}>Guild Hub</Typography>
-        </Box>
-      </FooterSection>
-    </HomeRoot>
+                  </TableCell>
+                  <TableCell>{project.gender}</TableCell>
+                  <TableCell>{project.dressType}</TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Tooltip title="Edit Project">
+                        <IconButton 
+                          color="primary" 
+                          size="small" 
+                          onClick={() => onEditProject(project)}
+                        >
+                          <Edit fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Delete Project">
+                        <IconButton 
+                          color="error" 
+                          size="small" 
+                          onClick={() => {
+                            if (window.confirm('Are you sure you want to delete this project?')) {
+                              onDeleteProject(project.id);
+                            }
+                          }}
+                        >
+                          <Delete fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={4} align="center" sx={{ py: 8 }}>
+                  <Typography variant="body1" color="textSecondary">
+                    No projects found. Create your first project to get started!
+                  </Typography>
+                  <Button 
+                    variant="text" 
+                    startIcon={<Add />} 
+                    onClick={onCreateNew}
+                    sx={{ mt: 1 }}
+                  >
+                    Create Project
+                  </Button>
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </StyledTableContainer>
+    </Box>
   );
 };
-
-// Internal Box for footer links since it's simple
-const Box = styled('div')(() => ({}));

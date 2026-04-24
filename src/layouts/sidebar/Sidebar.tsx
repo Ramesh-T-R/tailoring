@@ -49,8 +49,9 @@ export const Sidebar: React.FC<Props> = ({ onNavigate }) => {
               {[
                 { label: 'Measurement Types', icon: <Straighten fontSize="small" />, view: 'config-measurements' },
                 { label: 'Size Charts', icon: <GridOn fontSize="small" />, view: 'config-sizes' },
-                { label: 'Dress Types', icon: <Checkroom fontSize="small" />, view: 'config-dresses' },
                 { label: 'Design category', icon: <Brush fontSize="small" />, view: 'config-parts' },
+                { label: 'Designs', icon: <Brush fontSize="small" />, view: 'designs' },
+                { label: 'Dress Types', icon: <Checkroom fontSize="small" />, view: 'config-dresses' },
               ].map((item) => (
                 <SubNavListItemButton 
                   key={item.label}
