@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Typography, Table, TableBody, TableCell, TableHead, TableRow, 
   IconButton, Button, Box, Dialog, DialogTitle, DialogContent, 
@@ -27,6 +27,10 @@ export const SizeChartPage: React.FC = () => {
   const [entries, setEntries] = useState<Partial<SizeChartEntry>[]>([]);
   const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
   
+  // Filter State for Entries
+  const [filterSizeTypeId, setFilterSizeTypeId] = useState<string>('all');
+  const [filterUnit, setFilterUnit] = useState<string>('all');
+
   // Clone Modal State
   const [cloneOpen, setCloneOpen] = useState(false);
   const [cloneSize, setCloneSize] = useState('');
@@ -92,7 +96,16 @@ export const SizeChartPage: React.FC = () => {
   };
 
   const handleAddRow = () => {
-    setEntries([...entries, { sizeTypeId: '', measurementTypeId: '', unit: 'cm', value: 0 }]);
+    // If filters are active, use them as defaults for the new row
+    const defaultSizeTypeId = filterSizeTypeId !== 'all' ? filterSizeTypeId : '';
+    const defaultUnit = filterUnit !== 'all' ? (filterUnit as 'cm' | 'in') : 'cm';
+    
+    setEntries([...entries, { 
+      sizeTypeId: defaultSizeTypeId, 
+      measurementTypeId: '', 
+      unit: defaultUnit, 
+      value: 0 
+    }]);
   };
 
   const handleRemoveRow = (index: number) => {
@@ -163,7 +176,19 @@ export const SizeChartPage: React.FC = () => {
     setGender('Female');
     setEntries([]);
     setSelectedIndices([]);
+    setFilterSizeTypeId('all');
+    setFilterUnit('all');
   };
+
+  const filteredEntries = useMemo(() => {
+    return entries
+      .map((entry, index) => ({ entry, index }))
+      .filter(({ entry }) => {
+        const sizeMatch = filterSizeTypeId === 'all' || entry.sizeTypeId === filterSizeTypeId;
+        const unitMatch = filterUnit === 'all' || entry.unit === filterUnit;
+        return sizeMatch && unitMatch;
+      });
+  }, [entries, filterSizeTypeId, filterUnit]);
 
   return (
     <Box sx={{ p: 4 }}>
@@ -245,6 +270,39 @@ export const SizeChartPage: React.FC = () => {
             </Select>
           </FormControl>
 
+          <Box sx={{ mb: 2, display: 'flex', gap: 2, alignItems: 'center', bgcolor: '#f8f9fa', p: 2, borderRadius: 1 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, mr: 1 }}>Grid View Filters:</Typography>
+            <FormControl size="small" sx={{ minWidth: 150 }}>
+              <InputLabel>Size Type</InputLabel>
+              <Select 
+                value={filterSizeTypeId} 
+                label="Size Type" 
+                onChange={(e) => setFilterSizeTypeId(e.target.value)}
+              >
+                <MenuItem value="all">All Sizes</MenuItem>
+                {sizeTypes.map(st => <MenuItem key={st._id} value={st._id}>{st.name}</MenuItem>)}
+              </Select>
+            </FormControl>
+            <FormControl size="small" sx={{ minWidth: 120 }}>
+              <InputLabel>Unit</InputLabel>
+              <Select 
+                value={filterUnit} 
+                label="Unit" 
+                onChange={(e) => setFilterUnit(e.target.value)}
+              >
+                <MenuItem value="all">All Units</MenuItem>
+                <MenuItem value="cm">cm</MenuItem>
+                <MenuItem value="in">in</MenuItem>
+              </Select>
+            </FormControl>
+            {(filterSizeTypeId !== 'all' || filterUnit !== 'all') && (
+              <Button size="small" onClick={() => { setFilterSizeTypeId('all'); setFilterUnit('all'); }}>Clear Filters</Button>
+            )}
+            <Typography variant="caption" sx={{ ml: 'auto', color: 'text.secondary' }}>
+              Showing {filteredEntries.length} of {entries.length} entries
+            </Typography>
+          </Box>
+
           <Table size="small">
             <TableHead>
               <TableRow>
@@ -257,7 +315,7 @@ export const SizeChartPage: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {entries.map((entry, index) => (
+              {filteredEntries.map(({ entry, index }) => (
                 <TableRow key={index} selected={selectedIndices.includes(index)}>
                   <TableCell padding="checkbox">
                     <Checkbox checked={selectedIndices.includes(index)} onChange={() => toggleSelection(index)} />
