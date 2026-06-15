@@ -1,50 +1,50 @@
 # 6. Project Epics
 
-This document breaks down the Thaiyalagam platform into high-level Epics based on the current implementation state (v0.1.0).
+This document breaks the Thaiyalagam platform into Epics based on the **actual implementation state** (v0.1.0). Status reflects what is wired into the running app.
 
 ## Epic 1: Atelier Configuration Suite
 **Goal:** Provide the "Master Recipe" foundation for tailoring projects.
-- **User Story:** As a Guild Admin, I want to define standardized dress types and size charts so that projects have consistent starting points.
+- **User Story:** As a Guild Admin, I want to define standardized measurement types, dress types, and size charts so that projects have consistent, reusable starting points.
 - **Key Features:**
-    - CRUD for **Measurement Types** (Metrics definitions).
-    - CRUD for **Size Charts** with unit conversion (cm/in) and cloning support.
-    - CRUD for **Dress Types** (Garment blueprints).
-    - CRUD for **Design Categories** (Modular pattern components).
+    - CRUD for **Measurement Types** (`{ name, description }`).
+    - CRUD for **Size Charts** with cm/in units, 0–250 validation, and entry **cloning**.
+    - CRUD for **Size Types** (standard size labels).
+    - CRUD for **Dress Types** (garment blueprints linking a Size Chart and Design Combinations).
+    - CRUD for **Design Categories** and **Designs** (modular components).
 - **Status:** ✅ Implemented.
 
 ## Epic 2: Bespoke Project Management
 **Goal:** Centralize the lifecycle of individual customer projects.
-- **User Story:** As a Tailor, I want a dashboard to manage all my bespoke projects and track their progress.
+- **User Story:** As a Tailor, I want a dashboard to create, edit, and delete my bespoke projects.
 - **Key Features:**
-    - Project Dashboard with card-based status overview.
-    - Integration with user branding ("Master Ramesh").
-    - Persistent storage of customer measurements and design choices via REST API.
+    - Card-based project home (`HomePage`).
+    - Persistent storage of measurements, design combinations, and size selection via REST API.
 - **Status:** ✅ Implemented.
 
-## Epic 3: Scientific Project Setup Wizard
-**Goal:** Ensure technical accuracy during the project initialization phase.
-- **User Story:** As a Tailor, I want a guided multi-step process to set up a new project to ensure no technical details are missed.
-- **Key Features:**
-    - Step 1: **Template Selection** (Dress Type).
-    - Step 2: **Standard Selection** (Size Chart mapping).
-    - Step 3: **Design Configuration** (Component selection).
-    - Step 4: **Fabric Selection** (Material properties).
-- **Status:** ✅ Implemented.
+## Epic 3: Project Setup
+**Goal:** Capture an accurate, technically-complete project definition.
+- **User Story:** As a Tailor, I want to define a project's garment, design combination, standard size, and measurements on one screen with a live preview.
+- **Key Features (single-page `ProjectSetup`):**
+    - **General Info:** name, gender, dress type (filtered by gender).
+    - **Design Combinations:** select a predefined combination from the dress type.
+    - **Size & Measurements:** pick a standard size, auto-populate measurements from the size chart, edit per measurement type, toggle cm/in.
+    - **Live 3D Preview:** real-time `PatternVisualizer`.
+- **Status:** ✅ Implemented (single page; not a multi-step wizard).
 
-## Epic 4: Parametric Geometry & Visualization (Beta)
-**Goal:** Translate physical measurements into digital blueprints and 3D simulations.
-- **User Story:** As a Tailor, I want to see how measurement changes impact the pattern and 3D fit in real-time.
+## Epic 4: Garment Visualization
+**Goal:** Translate measurements into a real-time digital garment preview.
+- **User Story:** As a Tailor, I want to see how measurement changes affect the garment in real time.
 - **Key Features:**
-    - **ConstraintSolver:** Initial logic for Formal Shirt pattern piece recalculation.
-    - **2D Pattern Plotter:** SVG/Canvas representation of pattern pieces.
-    - **3D Visualization:** Scaling mannequin based on physical measurements using `react-three-fiber`.
-- **Status:** 🟡 Partial (Formal Shirt support only).
+    - **3D Visualizer (`PatternVisualizer`):** hardcoded "Princess Cut" bodice driven by named measurement types via `react-three-fiber`.
+- **Status:** 🟡 Partial — single garment shape; measurement→geometry binding is by measurement-type name.
+- **Experimental (not wired):** 2D `ConstraintSolver` (Formal Shirt) — present in code, off the live path.
 
 ## Epic 5: Technical State & Persistence
-**Goal:** Ensure data integrity and provide a responsive user experience.
-- **User Story:** As a User, I want my changes to be saved automatically and have the ability to undo mistakes during my session.
+**Goal:** Ensure data integrity and a responsive experience.
+- **User Story:** As a User, I want my project data validated and reliably persisted.
 - **Key Features:**
-    - **StoreManager:** In-memory session history (Undo/Redo).
-    - **Push-on-Change:** Debounced background synchronization with the server.
-    - **Zod Validation:** Type-safe API gateway to prevent data corruption.
-- **Status:** 🟡 Partial (Session-based history; persistence roadmap).
+    - **Zod Validation:** type-checked API gateway.
+    - **Explicit Save:** create/update on demand via the service layer.
+- **Status:** 🟡 Partial.
+- **Not wired:** `StoreManager` session history/undo (present but unused).
+- **Not implemented:** debounced background sync (earlier docs were aspirational).

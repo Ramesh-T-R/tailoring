@@ -1,26 +1,43 @@
 # 3. Backend Architecture
-The backend is a TypeScript-driven REST service optimized for JSON document persistence.
+The backend is a TypeScript REST service (Express 5) optimized for JSON document persistence.
 
 ## Service Stack
-- **Runtime:** Node.js with Express.
+- **Runtime:** Node.js with Express 5 (run via `ts-node-dev` in development).
 - **Data Modeling:** Mongoose for schema-based MongoDB interactions.
-- **Validation:** Zod schemas are used to enforce data types and presence at the API gateway. 
-- **Constraint Roadmap:** Full physical validation (e.g., non-negative measurements, geometric feasibility) is currently handled on the client, with server-side enforcement planned for future releases.
+- **Validation:** Zod schemas validate request bodies at the controller layer (e.g. `ProjectSchema`, `FabricSchema`). Update endpoints validate against a partial schema.
+- **Middleware:** `cors` and JSON body parsing. Sentry packages (`@sentry/node`, `@sentry/profiling-node`) are installed.
+- **Entry point:** `server/src/index.ts` connects to MongoDB, then starts the HTTP listener.
+
+## API Surface (routes)
+Mounted under `/api`:
+- `/api/projects`
+- `/api/measurement-types`
+- `/api/size-charts` (also exposes size types)
+- `/api/dress-types`
+- `/api/design-categories`
+- `/api/designs`
+
+Each resource follows routes → controller → Zod schema → Mongoose model.
 
 ## Domain Models
 ### Core Entities
-- **Project (`IProject`):** The central document linking a customer profile, selected dress type, measurements, and design choices.
-- **Dress Type (`IDressType`):** Garment blueprints (e.g., "Formal Shirt", "Trouser") that define valid design combinations and default measurement sets.
-- **Size Chart (`ISizeChart`):** Mapping of standard sizes (S, M, L, etc.) to specific measurement values across different measurement types. Supports unit conversion (cm/in).
-- **Measurement Type (`IMeasurementType`):** Definitions for individual metrics (e.g., "Chest Circumference") including icons and validation ranges.
-- **Design & Design Category:** Modular components (e.g., "Spread Collar", "French Cuff") organized by category to allow for configuration of garment styles.
+- **Project (`IProject`):** Central document linking customer info, a Dress Type reference, selected design combinations, a size type, a `measurements` array of `{ measurementTypeId, value }`, a `fabric` sub-document, `pieces`, and a `version`.
+- **Dress Type:** Garment blueprint `{ name, gender, description, sizeChartId, designCombinations[] }`.
+- **Size Chart:** `{ name, gender, entries[] }`, where each entry is `{ sizeTypeId, measurementTypeId, unit (cm/in), value }`.
+- **Size Type:** Standard size label (e.g. S/M/L).
+- **Measurement Type:** `{ name, description }`. *(No icons or validation ranges are stored on the model today — value-range checks like 0–250 are enforced in the Size Chart UI.)*
+- **Design Category & Design:** Modular components — a Design `{ name, category, description }` belongs to a Design Category `{ name }`.
 
 ### Relationships
-- Projects are instantiated from a **Dress Type**.
-- Dress Types are associated with specific **Size Charts** and **Design Categories**.
-- Size Charts contain multiple **Size Types** (e.g., "Standard Sizing") and their corresponding values for various **Measurement Types**.
+- Projects reference a **Dress Type**.
+- Dress Types reference a **Size Chart** and contain **Design Combinations** (arrays of Design IDs).
+- Size Chart entries reference **Size Types** and **Measurement Types**.
 
-## Planned Middleware
-- **Morgan/Winston:** For structured logging of API requests and error states.
-- **Health Check Endpoint:** `/api/health` for monitoring service availability.
-- **Rate Limiting:** (Roadmap) To prevent abuse of the measurement update endpoints.
+## Known Schema Divergence
+- The project `fabric` sub-document uses `recommendedPresserFoot` (and has no thread field) on the server, while the frontend sends `recommendedFoot` / `recommendedThread`. Because Zod strips unknown keys, these client fields are dropped on save. This should be reconciled to a single naming.
+
+## Planned / Not Yet Implemented
+- **Structured request logging** (e.g. Morgan/Winston) — not present.
+- **Health Check Endpoint** (`/api/health`) — not present.
+- **Rate Limiting** — not present.
+- **Server-side physical/geometric validation** — currently minimal (type/shape validation only); richer domain validation is a roadmap item.
