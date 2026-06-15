@@ -1,26 +1,27 @@
 # 4. Data Flow
-The system employs a "Push-on-Change" data flow with local-first characteristics.
+The system uses explicit, user-driven persistence with local-first preview rendering.
 
 ## Project Initialization Flow
-The creation of a new bespoke project follows a strict multi-step workflow orchestrated by the `ProjectSetup` wizard:
-1. **Template Selection:** User chooses a `DressType` (e.g., Formal Shirt).
-2. **Standard Selection:** User selects a base size from the associated `SizeChart`. This populates the project with default measurements.
-3. **Design Configuration:** User selects options for each `DesignCategory` linked to the `DressType`.
-4. **Fabric Selection:** User defines material properties (Color, Roughness, Clearcoat) which influence the 3D shader.
-5. **Finalization:** The `ProjectService.create()` call persists the complete project configuration to the database.
+New/edited projects are defined on the single-page `ProjectSetup` screen (not a multi-step wizard):
+1. **General Info:** User enters a project name, selects gender, and picks a `DressType` (filtered by gender).
+2. **Design Combination:** User selects a predefined design combination from the chosen Dress Type (via a modal).
+3. **Standard Size & Measurements:** User picks a `SizeType`; measurement inputs are auto-populated from the Dress Type's `SizeChart` entries (with cm/in conversion) and can be edited per Measurement Type.
+4. **Live Preview:** The `PatternVisualizer` updates in real time as measurements change.
+5. **Save:** `handleSave` assembles the payload (`measurements` mapped to `{ measurementTypeId, value }`) and calls `projectService.create()` or `projectService.update()`.
 
-## Update Lifecycle
-1.  **Interaction:** User modifies a measurement slider in the `MeasurementForm`.
-2.  **Debounce:** The `ProjectDashboard` captures the event but waits (500ms) for the user to finish adjusting.
-3.  **Local Sync:**
-    - `StoreManager` creates a new immutable state snapshot.
-    - `ConstraintSolver` recalculates all `PatternPiece` points.
-    - Local UI (3D and 2D) updates immediately.
-4.  **Remote Sync:** `ProjectService.update()` is called with the new project state.
-5.  **Validation Gate:** The API validates the request body using Zod schemas.
-6.  **Persistence:** MongoDB persists the document with an incremented version number.
+## Measurement Update Lifecycle
+1.  **Interaction:** User edits a measurement field (or selects a standard size that populates many) in `ProjectSetup`.
+2.  **Local State:** React state updates immediately.
+3.  **Preview Recompute:** `PatternVisualizer` re-derives garment geometry from the updated measurement map on the next render.
+4.  **Persistence:** Occurs only when the user clicks **Save** — the full project payload is sent.
+5.  **Validation Gate:** The API validates the body with Zod.
+6.  **Persistence:** MongoDB stores the document (with a `version` field; `timestamps` enabled).
+
+> There is **no debounced background synchronization** and no optimistic remote sync in the current implementation. Persistence is explicit.
 
 ## Error Handling
-- **Network Failure:** Current implementation logs failures to the console.
-- **Rollback (Roadmap):** Implementation of state reconciliation or UI rollback is required if a debounced persistence call fails after optimistic local updates have been applied.
-- **Validation Failure:** If API returns a 400 error, the client currently remains in the invalid state; automated revert logic is a roadmap item.
+- **Network/Save Failure:** Errors are caught and logged to the console; the setup screen surfaces a load error via an `Alert` when configuration data fails to load.
+- **Validation Failure:** A 400 from the API is logged; there is no automated client-side revert/rollback yet (roadmap).
+
+## Note on Legacy Flow
+An older flow based on `ProjectDashboard` + `MeasurementForm` + `StoreManager` + `ConstraintSolver` (with a 500ms debounce and undo history) exists in the codebase but is **not active** — `ProjectSetup` serves both creation and editing.
