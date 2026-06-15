@@ -6,6 +6,8 @@ sources:
   - "documents/PRD/3-technical-stack.md"
   - "documents/PRD/4-current-status-v010.md"
   - "documents/PRD/5-success-metrics.md"
+  - "documents/PRD/6-epics.md"
+  - "documents/PRD/7-user-stories.md"
   - "documents/PRD/index.md"
   - "documents/ARCHITECTURE/1-high-level-overview.md"
   - "documents/ARCHITECTURE/2-frontend-architecture-enterprise-standard.md"
@@ -15,50 +17,56 @@ sources:
   - "documents/ARCHITECTURE/6-infrastructure.md"
   - "documents/ARCHITECTURE/index.md"
 downstream_consumer: "general"
-created: "2026-04-24"
-token_estimate: 1050
+created: "2025-05-16"
+token_estimate: 1261
 parts: 1
 ---
 
-## Core Concept
-- Thaiyalagam: specialized CAD/CAM platform bridging traditional tailoring craftsmanship with digital precision (Scientific Atelier).
-- Primary objectives: technical cutting accuracy; material waste reduction (ghost-nesting); modular/reusable pattern blueprints (Master Recipes).
-- Target users: professional tailors (precision/versioning); apprentices (simulation); bespoke designers (modular recipes).
+## Vision & Audience
+- Thaiyalagam: "Scientific Atelier" workspace bridging traditional craftsmanship + digital precision
+- Goals: Technical accuracy in cutting; material waste reduction (3D visualization); open-source craftsmanship community
+- Users: Professional tailors (precision/versioning); Apprentices (simulation/mentorship logic); Bespoke Designers (modular "Master Recipes")
 
-## System Architecture
-- Client Tier: React 18, TypeScript, Material UI 6+ (Styled Components); local optimistic state for zero-latency feedback.
-- API Tier: Node.js (Express), TypeScript REST service; stateless service layer; gateway for document persistence.
-- Data Tier: MongoDB Atlas; stores versioned snapshots of tailoring projects and complex measurement profiles.
-- Communication: RESTful CRUD for project management; asynchronous local geometric recalculations; debounced client-to-API synchronization.
+## Core Features (MVP)
+- Guild Admin: Dashboard for project management; bespoke branding (e.g., "Master Ramesh")
+- Scientific Measurement: Parametric sliders for Gender, Height, Chest, Waist, Hips, Shoulder, Arm, Neck
+- 3D Pre-Visualizer: Real-time scaling (X/Y/Z) via react-three-fiber; basic shaders (Color, Roughness, Clearcoat) for fabric approximation
+- Configuration Suite: CRUD for Dress Types, Size Charts (multi-unit cm/in, cloning), Measurement Types, Design Categories
 
-## Frontend Technical Logic
-- StoreManager: in-memory state orchestrator (src/store/projectStore.ts); optimistic updates; immutable snapshots.
-- History Engine: stack-based undo/redo; pruning limited to last 50 snapshots to prevent memory exhaustion.
-- ConstraintSolver: parametric geometric engine (src/features/visualization/logic/geometry.ts); maps measurements to 2D Vector2D coordinates via parametric ripple logic.
-- Visualization: Three.js (React Three Fiber) for 3D mannequin rendering; HTML5 Canvas for 2D blueprints.
-- Organization: feature-based modular structure (src/features/tailoring for lifecycle/config; src/features/visualization for 3D/2D engines).
+## Key User Stories
+- **Atelier Configurations:** Manage measurement definitions; define/clone standard size charts (cm/in); create garment blueprints (Dress Types) linking charts and design categories.
+- **Project Management:** Track active bespoke projects via dashboard; perform quick actions (open/delete); adjust measurements via sliders with real-time feedback; undo/redo during session; monitor project versioning.
+- **Project Setup:** Guided multi-step wizard (Template -> Size -> Design -> Fabric); pre-populate from Dress Type; default to standard sizes before bespoke tuning; real-time fabric material preview (color, roughness, clearcoat).
+- **Visualization:** Dynamic 3D mannequin scaling; 2D technical blueprint (Digital Chalk) viewing; interactive 3D inspection (rotate/zoom); automatic pattern point recalculation on measurement change.
 
-## Backend & Data Persistence
-- Service Stack: Node.js/Express with Mongoose for MongoDB interactions.
-- Validation Gate: Zod schemas enforce physical/geometric constraints (e.g., non-negative measurements) at API gateway.
-- IProject Model: includes unique IDs; nested measurement profiles (strict bounds); fabric properties (stretch coefficients, tool settings); DesignCategory; pattern piece geometric points.
-- Diagnostics: Morgan/Winston logging; /api/health monitoring endpoint.
+## Technical Architecture
+- Client Tier (React 18/TS): Feature-based modular structure; Material UI 6+; local "Optimistic State" for zero-latency feedback
+- API Tier (Node/Express/TS): Stateless service layer; Zod validation; gateway to document store
+- Data Tier (MongoDB Atlas): Versioned snapshots of projects; nested measurement profiles; piece geometry
+- Communications: Sync REST API (CRUD); Asynchronous local geometric calcs; debounced persistent sync
 
-## Functional Features (MVP)
-- Guild Admin: central dashboard for project CRUD with professional user branding.
-- Measurement System: parametric sliders for high-precision entry (Gender, Height, Chest, Waist, Hips, Shoulder, Arm, Neck).
-- Digital Chalk: vector-based planning with ripple logic; automatic 2D coordinate recalculation upon measurement change.
-- Digital Dress Rehearsal: fabric-aware 3D rendering (Silk, Denim, Linen) scaling dynamically with measurements.
-- Stitch Toolkit: automated technical recommendations (needles, presser feet, thread) based on fabric weight/stretch; completeness checks for pattern pieces.
-- Configuration Management: CRUD interfaces for Measurement Types, Size Charts (cm/in), Dress Types, and Design Categories.
+## State & Logic
+- StoreManager: In-memory orchestrator; stack-based undo/redo (active session only); 50-snapshot pruning limit
+- ConstraintSolver: "Brain" of system; maps physical measurements to 2D Vector2D coordinates via "Parametric Ripple" logic
+- useAppLogic: Workflow stepper (Selection -> Configuration -> Visualization); virtual view routing (ATELIER_CONFIG, PROJECT_DASHBOARD)
+- Sync Pattern: Immediate local update -> 500ms debounce -> ProjectService.update() -> Zod validation -> MongoDB persistence (incremented version)
 
-## Operational Lifecycle & Stability
-- Update Lifecycle: User input -> 500ms debounce -> local immutable snapshot -> ConstraintSolver recalculation -> UI update (3D/2D) -> API persistence (Zod validation) -> MongoDB version increment.
-- Stability Features: End-to-end TypeScript types; input validation preventing data corruption; state updates via object spreading.
-- Infrastructure: Vite build output for static frontend hosting; Docker/PaaS for backend; PORT (default 5001) and MONGODB_URI environment variables.
-- Security Posture: Internal tooling phase; Zero-Auth (trusted internal access); no tenant isolation; client-side geometric point trust.
+## Technical Status (v0.1.0)
+- ✅ Guild Admin, Configuration Suite, Project Setup Wizard, Persistence Layer (Zod/REST)
+- 🟡 Scientific Measurement System: Implemented with 3D/2D basic plotting
+- 🟡 Parametric Engine (Partial): ConstraintSolver supports Formal Shirt; others planned
+- 🟡 Scalability: Enterprise structure; in-memory session history (non-persistent)
+
+## Beta & Roadmap (Technical Honesty)
+- Geometric Constraints (BETA): Measurement changes recalculate fixed point sets (Ripple logic); limited constraints; Formal Shirt only
+- Persistent History (ROADMAP): Undo/Redo snapshots currently volatile (lost on refresh); DB persistence required
+- Advanced Error Handling (ROADMAP): Network failures logged to console only; no state reconciliation/rollback on sync failure; invalid states remain on 400 errors
+- Security (ROADMAP): Current "Internal Tooling" phase (Zero-Auth); no tenant isolation; backend trusts client-provided geometric points (validates measurements only)
+- Advanced Visualization (ROADMAP): Static stitch recommendations (needle/presser feet); future dynamic weight/stretch logic + "Completeness Checks"
+- Performance (ROADMAP): Move geometric calcs to Web Workers (v0.2.0)
+- Infrastructure (ROADMAP): Sentry tracking; Prometheus/Grafana metrics; Rate limiting
 
 ## Success Metrics
-- Fabric waste reduction via ghost-nesting optimization.
-- First-cut accuracy improvement (reduced trial cuttings for complex designs).
-- Community growth: volume of Master Recipes shared/forked.
+- Waste Reduction: Lower fabric discard via "Ghost-Nesting" optimization
+- First-Cut Accuracy: Fewer physical trial cuttings for complex designs
+- Guild Growth: Community sharing/forking of "Master Recipes"

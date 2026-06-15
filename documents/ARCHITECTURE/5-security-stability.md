@@ -10,5 +10,9 @@ The system is currently in a "Internal Tooling" security phase.
 ## Stability Features
 -   **Type Safety:** End-to-end TypeScript types shared between `src/types/` and `server/src/models/`.
 -   **Input Validation:** Server-side Zod validation prevents "garbage-in" data corruption.
+-   **Stability Monitoring (Sentry):** 
+    - **Error Tracking:** Real-time capture of unhandled exceptions across both Client and API tiers.
+    - **Breadcrumbs:** Automatic logging of user interactions and network requests to facilitate root-cause analysis.
+    - **Telemetry:** Capture of performance metrics and warning/info level logs for system health monitoring.
 -   **Snapshot Pruning:** Prevents client-side memory bloat from infinite history.
 -   **Immutability:** State updates use object spreading to ensure predictable state transitions.

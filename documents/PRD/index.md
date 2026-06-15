@@ -14,3 +14,5 @@
   - [3. Technical Stack](./3-technical-stack.md)
   - [4. Current Status (v0.1.0)](./4-current-status-v010.md)
   - [5. Success Metrics](./5-success-metrics.md)
+  - [6. Project Epics](./6-epics.md)
+  - [7. User Stories](./7-user-stories.md)

@@ -4,16 +4,21 @@ The backend is a TypeScript-driven REST service optimized for JSON document pers
 ## Service Stack
 - **Runtime:** Node.js with Express.
 - **Data Modeling:** Mongoose for schema-based MongoDB interactions.
-- **Validation:** Zod schemas are used to enforce physical constraints (e.g., non-negative measurements) at the API gateway, preventing invalid data from entering the database.
+- **Validation:** Zod schemas are used to enforce data types and presence at the API gateway. 
+- **Constraint Roadmap:** Full physical validation (e.g., non-negative measurements, geometric feasibility) is currently handled on the client, with server-side enforcement planned for future releases.
 
 ## Domain Models
-### Project Model (`IProject`)
-The central document containing:
-- **Identity:** Unique project and customer IDs.
-- **Measurements:** Nested profile with strict numeric bounds.
-- **Fabric:** Material properties including stretch coefficients and recommended tool settings.
-- **DesignCategory:** Managed list of pattern categories (e.g., Sleeves, Collars).
-- **Pieces:** Array of geometric points representing the pattern pieces.
+### Core Entities
+- **Project (`IProject`):** The central document linking a customer profile, selected dress type, measurements, and design choices.
+- **Dress Type (`IDressType`):** Garment blueprints (e.g., "Formal Shirt", "Trouser") that define valid design combinations and default measurement sets.
+- **Size Chart (`ISizeChart`):** Mapping of standard sizes (S, M, L, etc.) to specific measurement values across different measurement types. Supports unit conversion (cm/in).
+- **Measurement Type (`IMeasurementType`):** Definitions for individual metrics (e.g., "Chest Circumference") including icons and validation ranges.
+- **Design & Design Category:** Modular components (e.g., "Spread Collar", "French Cuff") organized by category to allow for configuration of garment styles.
+
+### Relationships
+- Projects are instantiated from a **Dress Type**.
+- Dress Types are associated with specific **Size Charts** and **Design Categories**.
+- Size Charts contain multiple **Size Types** (e.g., "Standard Sizing") and their corresponding values for various **Measurement Types**.
 
 ## Planned Middleware
 - **Morgan/Winston:** For structured logging of API requests and error states.

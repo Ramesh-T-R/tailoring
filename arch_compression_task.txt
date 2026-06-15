@@ -1,0 +1,22 @@
+Act as the Distillate Compressor Agent.
+Your task is to produce a lossless, token-efficient distillate from the following ARCHITECTURE source documents:
+- documents/ARCHITECTURE/1-high-level-overview.md
+- documents/ARCHITECTURE/2-frontend-architecture-enterprise-standard.md
+- documents/ARCHITECTURE/3-backend-architecture.md
+- documents/ARCHITECTURE/4-data-flow.md
+- documents/ARCHITECTURE/5-security-stability.md
+- documents/ARCHITECTURE/6-infrastructure.md
+- documents/ARCHITECTURE/index.md
+
+Reflect the "Beta" and "Roadmap" status of features like full geometric constraints, persistent history, and advanced error handling.
+
+Follow the instructions in /Users/rameshramnath/Projects/Tailoring/.gemini/skills/bmad-distillator/agents/distillate-compressor.md.
+Apply rules from /Users/rameshramnath/Projects/Tailoring/.gemini/skills/bmad-distillator/resources/compression-rules.md.
+Reference /Users/rameshramnath/Projects/Tailoring/.gemini/skills/bmad-distillator/resources/distillate-format-reference.md for format.
+
+Return a JSON object with:
+- distillate_content
+- source_headings
+- source_named_entities
+- token_estimate
+- sections: null

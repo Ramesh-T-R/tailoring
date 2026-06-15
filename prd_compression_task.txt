@@ -1,0 +1,21 @@
+Act as the Distillate Compressor Agent.
+Your task is to produce a lossless, token-efficient distillate from the following PRD source documents:
+- documents/PRD/1-executive-summary.md
+- documents/PRD/2-core-features-mvp.md
+- documents/PRD/3-technical-stack.md
+- documents/PRD/4-current-status-v010.md
+- documents/PRD/5-success-metrics.md
+- documents/PRD/index.md
+
+Reflect the "Beta" and "Roadmap" status of features like full geometric constraints, persistent history, and advanced error handling.
+
+Follow the instructions in /Users/rameshramnath/Projects/Tailoring/.gemini/skills/bmad-distillator/agents/distillate-compressor.md.
+Apply rules from /Users/rameshramnath/Projects/Tailoring/.gemini/skills/bmad-distillator/resources/compression-rules.md.
+Reference /Users/rameshramnath/Projects/Tailoring/.gemini/skills/bmad-distillator/resources/distillate-format-reference.md for format.
+
+Return a JSON object with:
+- distillate_content
+- source_headings
+- source_named_entities
+- token_estimate
+- sections: null
